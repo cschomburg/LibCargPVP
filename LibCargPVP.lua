@@ -1,4 +1,4 @@
-local lib = LibStub:NewLibrary("LibCargPVP", 2)
+local lib = LibStub:NewLibrary("LibCargPVP", 3)
 if(not lib) then return end
 
 -- Index following GetNumBattlegroundTypes()
@@ -39,7 +39,8 @@ local data = {
 		achTotal = 4096,
 		achWon = 4097,
 		itemID = 47395,
-	},{
+	},
+	[-1] = {
 		name = "Wintergrasp",
 		abbr = "Wintergrasp",
 		itemID = 43589,

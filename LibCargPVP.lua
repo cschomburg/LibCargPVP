@@ -1,4 +1,4 @@
-local lib = LibStub:NewLibrary("LibCargPVP", 3)
+local lib = LibStub:NewLibrary("LibCargPVP", 4)
 if(not lib) then return end
 
 -- Index following GetNumBattlegroundTypes()
@@ -15,6 +15,8 @@ local data = {
 		achTotal = 52,
 		achWon = 105,
 		itemID = 20558,
+		winXP = 9,
+		lossXP = 1,
 	},{
 		name = "Arathi Basin",
 		abbr = "Arathi",
@@ -126,4 +128,44 @@ function lib.GetBattlegroundDaily()
 			return dailies[id], id
 		end
 	end
+end
+
+-- Get the estimated experience tick for your current level
+-- function calculated by using these values
+--[[
+	lvl -	experience tick (half ws flag / 1 tick in arathi basin)
+	16		264
+	17		287
+	19		327
+	21		372
+	23		419
+	34		598
+	35		632
+	55		1547
+	80		6200
+]]
+local a = 0.03722481
+local b = -3.2389638
+local c = 108.482513
+local d = -809.23023
+function lib.GetExperienceTick(lvl)
+	local x = lvl or UnitLevel("player")
+	return a*x^3 + b*x^2 + c*x + d
+end
+
+-- Get the maximum and minimum experience for one battleground
+function lib.GetBattlegroundExperience(id, lvl)
+	local info = data[id]
+	local tick = lib.GetExperienceTick(lvl)
+	return info and info.winXP and info.winXP*tick, info and info.lossXP and info.lossXP*tick
+end
+
+-- Get the average experience gained in one battleground based on win/loss ratio
+function lib.GetAverageBattlegroundExperience(id, lvl, assumeEqual)
+	local winXP, lossXP = lib.GetBattlegroundExperience(id, lvl)
+	if(assumeEqual) then return winXP and lossXP and (winXP+lossXP)/2 end
+
+	local win, total = lib.GetBattlegroundWinTotal(id)
+	if(total == 0) then	win, total = 0.5, 1 end
+	return winXP and lossXP and win/total*winXP+(1-win/total)*lossXP
 end

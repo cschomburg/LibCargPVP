@@ -9,26 +9,40 @@ local data = {
 		achTotal = 53,
 		achWon = 49,
 		itemID = 20560,
+		maxBonus = 29,
+		minBonus = 0,
+		maxBonusHoliday = 33,
+		minBonusHoliday = 4,
 	},{
 		name = "Warsong Gulch",
 		abbr = "Warsong",
 		achTotal = 52,
 		achWon = 105,
 		itemID = 20558,
-		winXP = 9,
-		lossXP = 1,
+		maxBonus = 9,
+		minBonus = 2,
+		maxBonusHoliday = 13,
+		minBonusHoliday = 4,
 	},{
 		name = "Arathi Basin",
 		abbr = "Arathi",
 		achTotal = 55,
 		achWon = 51,
 		itemID = 20559,
+		maxBonus = 9,
+		minBonus = 2,
+		maxBonusHoliday = 17,
+		minBonusHoliday = 4,
 	},{
 		name = "Eye of the Storm",
 		abbr = "EotS",
 		achTotal = 54,
 		achWon = 50,
 		itemID = 29024,
+		maxBonus = 9,
+		minBonus = 2,
+		maxBonusHoliday = 17,
+		minBonusHoliday = 4,
 	},{
 		name = "Strand of the Ancients",
 		abbr = "SotA",
@@ -130,42 +144,58 @@ function lib.GetBattlegroundDaily()
 	end
 end
 
--- Get the estimated experience tick for your current level
--- function calculated by using these values
+-- Get the estimated kill honor for your current level
+-- the bonus honor system follows the kill honor for equal level
+
 --[[
-	lvl -	experience tick (half ws flag / 1 tick in arathi basin)
-	16		264
-	17		287
-	19		327
-	21		372
-	23		419
-	34		598
-	35		632
-	55		1547
-	80		6200
+	function calculated by using these values
+	lvl 	kill honor
+	16		2.64
+	17		2.87
+	19		3.27
+	21		3.72
+	23		4.19
+	34		5.98
+	35		6.32
+	55		15.47
+	80		62
 ]]
 local a = 0.03722481
 local b = -3.2389638
 local c = 108.482513
 local d = -809.23023
-function lib.GetExperienceTick(lvl)
+-- Get the estimated kill honor for your current level
+function lib.GetKillHonor(lvl)
 	local x = lvl or UnitLevel("player")
 	return a*x^3 + b*x^2 + c*x + d
 end
 
--- Get the maximum and minimum experience for one battleground
-function lib.GetBattlegroundExperience(id, lvl)
+-- Get the maximum and minimum experience for one complete battleground round
+function lib.GetMinMaxBattlegroundHonor(id, lvl, ignoreHoliday)
 	local info = data[id]
-	local tick = lib.GetExperienceTick(lvl)
-	return info and info.winXP and info.winXP*tick, info and info.lossXP and info.lossXP*tick
+	if(not info) then return end
+
+	local honor = lib.GetKillHonor(lvl)
+	local min, max
+	if(not ignoreHoliday and select(3, GetBattlegroundInfo(id))) then
+		min, max = info.minBonusHoliday, info.maxBonusHoliday
+	else
+		min, max = info.minBonus, info.maxBonus
+	end
+
+	return min*honor, max*honor
 end
 
--- Get the average experience gained in one battleground based on win/loss ratio
-function lib.GetAverageBattlegroundExperience(id, lvl, assumeEqual)
-	local winXP, lossXP = lib.GetBattlegroundExperience(id, lvl)
-	if(assumeEqual) then return winXP and lossXP and (winXP+lossXP)/2 end
+-- Get the average honor gained in one battleground based on win/loss ratio
+function lib.GetAverageBattlegroundHonor(id, lvl, ignoreHoliday, assumeEqual)
+	local min, max = lib.GetMinMaxBattlegroundHonor(id, lvl, ignoreHoliday)
+	if(not min or not max) then return end
+	if(assumeEqual) then return (min+max)/2 end
 
 	local win, total = lib.GetBattlegroundWinTotal(id)
 	if(total == 0) then	win, total = 0.5, 1 end
-	return winXP and lossXP and win/total*winXP+(1-win/total)*lossXP
+	return win/total*max+(1-win/total)*min
 end
+
+-- use this to transform bonus honor into experience
+lib.XP_FACTOR = 100

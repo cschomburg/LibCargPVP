@@ -149,25 +149,29 @@ end
 
 --[[
 	function calculated by using these values
-	lvl 	kill honor
-	16		2.64
-	17		2.87
-	19		3.27
-	21		3.72
-	23		4.19
-	34		5.98
-	35		6.32
-	55		15.47
-	80		62
+	I would like to get the correct formula and not
+	just my own approximation :/
+
+	lvl 	kill honor	deviation
+	16		2.64		-0.03
+	17		2.87		-0.01
+	19		3.27		+0.05
+	21		3.72		+0.02
+	23		4.19		-0.07
+	34		5.98		+0.07
+	35		6.32		-0.07
+	55		15.47		-0.01
+	80		62			0
 ]]
-local a = 0.03722481
-local b = -3.2389638
-local c = 108.482513
-local d = -809.23023
+local a = 1.7932e-6
+local b = 4.5075e-5
+local c = -0.0119991
+local d = 0.57618113
+local e = -3.8319729
 -- Get the estimated kill honor for your current level
 function lib.GetKillHonor(lvl)
 	local x = lvl or UnitLevel("player")
-	return a*x^3 + b*x^2 + c*x + d
+	return a*x^4 + b*x^3 + c*x^2 + d*x + e
 end
 
 -- Get the maximum and minimum experience for one complete battleground round

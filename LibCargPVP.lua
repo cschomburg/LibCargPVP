@@ -147,31 +147,36 @@ end
 -- Get the estimated kill honor for your current level
 -- the bonus honor system follows the kill honor for equal level
 
---[[
-	function calculated by using these values
-	I would like to get the correct formula and not
-	just my own approximation :/
+local a = 2.3279-6
+local b = -4.725e-5
+local c = -6.747e-3
+local d = 0.46295607
+local e = -3.0124704
 
-	lvl 	kill honor	deviation
-	16		2.64		-0.03
-	17		2.87		-0.01
-	19		3.27		+0.05
-	21		3.72		+0.02
-	23		4.19		-0.07
-	34		5.98		+0.07
-	35		6.32		-0.07
-	55		15.47		-0.01
-	80		62			0
-]]
-local a = 1.7932e-6
-local b = 4.5075e-5
-local c = -0.0119991
-local d = 0.57618113
-local e = -3.8319729
+-- function calculated by using these values
+-- I would like to get the correct formula and not
+-- just my own approximation :/
+local killHonor = setmetatable({
+	[16] = 2.64,
+	[17] = 2.87,
+	[19] = 3.27,
+	[21] = 3.72,
+	[23] = 4.19,
+	[24] = 4.42,
+	[25] = 4.51,
+	[28] = 4.985,
+	[34] = 5.98,
+	[35] = 6.32,
+	[37] = 7.07,
+	[38] = 7.40,
+	[39] = 8.08,
+	[55] = 15.47,
+	[80] = 62,
+}, {__index = function(self, x) return a*x^4 + b*x^3 + c*x^2 + d*x + e end})
+
 -- Get the estimated kill honor for your current level
 function lib.GetKillHonor(lvl)
-	local x = lvl or UnitLevel("player")
-	return a*x^4 + b*x^3 + c*x^2 + d*x + e
+	return killHonor[lvl or UnitLevel("player")]
 end
 
 -- Get the maximum and minimum experience for one complete battleground round
@@ -187,7 +192,7 @@ function lib.GetMinMaxBattlegroundHonor(id, lvl, ignoreHoliday)
 		min, max = info.minBonus, info.maxBonus
 	end
 
-	return min*honor, max*honor
+	return min and min*honor, max and max*honor
 end
 
 -- Get the average honor gained in one battleground based on win/loss ratio

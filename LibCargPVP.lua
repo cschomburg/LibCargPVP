@@ -10,29 +10,29 @@ local data = {
 		achWon = 49,
 		itemID = 20560,
 		maxBonus = 29,
-		minBonus = 0,
+		minBonus = 0, -- 0 for end
 		maxBonusHoliday = 33,
-		minBonusHoliday = 4,
+		minBonusHoliday = 4, -- 4 for end,
 	},{
 		name = "Warsong Gulch",
 		abbr = "Warsong",
 		achTotal = 52,
 		achWon = 105,
 		itemID = 20558,
-		maxBonus = 9,
-		minBonus = 2,
-		maxBonusHoliday = 13,
-		minBonusHoliday = 4,
+		maxBonus = 9, -- 2 for end, 3*2 for flags, 1 for win
+		minBonus = 2, -- 2 for end
+		maxBonusHoliday = 13, -- 2x end, 2x win
+		minBonusHoliday = 4, -- 2x end
 	},{
 		name = "Arathi Basin",
 		abbr = "Arathi",
 		achTotal = 55,
 		achWon = 51,
 		itemID = 20559,
-		maxBonus = 9,
-		minBonus = 2,
-		maxBonusHoliday = 17,
-		minBonusHoliday = 4,
+		maxBonus = 9, -- 2 for end, 6*1 for 260-points-tick, 1 for win
+		minBonus = 2, -- 2 for end
+		maxBonusHoliday = 17, -- 2x end, 8*1 for 200-points-tick, 
+		minBonusHoliday = 4, -- 2x end
 	},{
 		name = "Eye of the Storm",
 		abbr = "EotS",
@@ -41,8 +41,8 @@ local data = {
 		itemID = 29024,
 		maxBonus = 9,
 		minBonus = 2,
-		maxBonusHoliday = 17,
-		minBonusHoliday = 4,
+		maxBonusHoliday = 17, --2x end
+		minBonusHoliday = 4, -- 2x end
 	},{
 		name = "Strand of the Ancients",
 		abbr = "SotA",
@@ -163,7 +163,7 @@ local killHonor = setmetatable({
 	[23] = 3.49, [24] = 3.68, [25] = 3.76, [26] = 3.96, [27] = 4.15, [28] = 4.35, [29] = 4.42,
 	[30] = 6.98, [31] = 4.92, [32] = 5.18,
 	[34] = 5.98, [35] = 6.32, [36] = 6.73, [37] = 7.07, [38] = 8.08,
-	[40] = 12.35, [41] = 8.68,
+	[40] = 12.35, [41] = 8.68, [42] = 9.31,
 	[55] = 15.47,
 	[80] = 62,
 }, {__index = function(self, x) return a*x^4 + b*x^3 + c*x^2 + d*x + e end})

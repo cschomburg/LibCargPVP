@@ -1,7 +1,9 @@
-local lib = LibStub:NewLibrary("LibCargPVP", 4)
+local lib = LibStub:NewLibrary("LibCargPVP", 5)
 if(not lib) then return end
 
 -- Index following GetNumBattlegroundTypes()
+-- You have been awared x honor points.
+-- You gain x experience.
 local data = {
 	{
 		name = "Alterac Valley",
@@ -9,40 +11,40 @@ local data = {
 		achTotal = 53,
 		achWon = 49,
 		itemID = 20560,
-		maxBonus = 29,
-		minBonus = 0, -- 0 for end
-		maxBonusHoliday = 33,
-		minBonusHoliday = 4, -- 4 for end,
+		maxTicks = 29, -- 3 for captain, 4x3 for destroyed towers, 4x1 for graveyards at end, 4x1 for towers at end,
+		minTicks = 0, -- 1 for loss
+		maxTicksHoliday = 33,
+		minTicksHoliday = 4, -- 4 for end,
 	},{
 		name = "Warsong Gulch",
 		abbr = "Warsong",
 		achTotal = 52,
 		achWon = 105,
 		itemID = 20558,
-		maxBonus = 9, -- 2 for end, 3*2 for flags, 1 for win
-		minBonus = 2, -- 2 for end
-		maxBonusHoliday = 13, -- 2x end, 2x win
-		minBonusHoliday = 4, -- 2x end
+		maxTicks = 9, -- 2 for end, 3*2 for flags, 1 for win
+		minTicks = 2, -- 2 for end
+		maxTicksHoliday = 13, -- 2x end, 2x win
+		minTicksHoliday = 4, -- 2x end
 	},{
 		name = "Arathi Basin",
 		abbr = "Arathi",
 		achTotal = 55,
 		achWon = 51,
 		itemID = 20559,
-		maxBonus = 9, -- 2 for end, 6*1 for 260-points-tick, 1 for win
-		minBonus = 2, -- 2 for end
-		maxBonusHoliday = 17, -- 2x end, 8*1 for 200-points-tick, 
-		minBonusHoliday = 4, -- 2x end
+		maxTicks = 9, -- 2 for end, 6*1 for 260-points-tick, 1 for win
+		minTicks = 2, -- 2 for end
+		maxTicksHoliday = 17, -- 2x end, 8*1 for 200-points-tick, 
+		minTicksHoliday = 4, -- 2x end
 	},{
 		name = "Eye of the Storm",
 		abbr = "EotS",
 		achTotal = 54,
 		achWon = 50,
 		itemID = 29024,
-		maxBonus = 9,
-		minBonus = 2,
-		maxBonusHoliday = 17, --2x end
-		minBonusHoliday = 4, -- 2x end
+		maxTicks = 9,
+		minTicks = 2,
+		maxTicksHoliday = 17, --2x end
+		minTicksHoliday = 4, -- 2x end
 	},{
 		name = "Strand of the Ancients",
 		abbr = "SotA",
@@ -144,8 +146,10 @@ function lib.GetBattlegroundDaily()
 	end
 end
 
--- Get the estimated kill honor for your current level
--- the bonus honor system follows the kill honor for equal level
+-- Get the estimated experience tick for your current level
+-- it seems to roughly follow the bonus honor (which likely is constant in your battleground range)
+-- but has some kind of difficulty factor based on level in it
+-- round levels (30, 40, etc) have a very high tick which falls out of the curve
 
 local a = 2.3279-6
 local b = -4.725e-5
@@ -153,45 +157,47 @@ local c = -6.747e-3
 local d = 0.46295607
 local e = -3.0124704
 
--- function calculated by using these values
+-- function calculated by using the table values
 -- I would like to get the correct formula and not
 -- just my own approximation :/
-local killHonor = setmetatable({
-	[16] = 2.20, [17] = 2.39,
-	[19] = 2.73,
-	[21] = 3.10,
-	[23] = 3.49, [24] = 3.68, [25] = 3.76, [26] = 3.96, [27] = 4.15, [28] = 4.35, [29] = 4.42,
-	[30] = 6.98, [31] = 4.92, [32] = 5.18,
-	[34] = 5.98, [35] = 6.32, [36] = 6.73, [37] = 7.07, [38] = 8.08,
-	[40] = 12.35, [41] = 8.68, [42] = 9.34, [43] = 9.67,
-	[55] = 15.47,
-	[80] = 62,
+local xpTicks = setmetatable({
+	[16] = 220, [17] = 239,
+	[19] = 273,
+	[21] = 310,
+	[23] = 349, [24] = 368, [25] = 376, [26] = 396, [27] = 415, [28] = 435, [29] = 442,
+	[30] = 698, [31] = 492, [32] = 518,
+	[34] = 598, [35] = 632, [36] = 673, [37] = 707, [38] = 808,
+	[40] = 1235, [41] = 868, [42] = 934, [43] = 967, [44] = 1001, [45] = 1067, [46] = 1101, [47] = 1167,
+	[55] = 1547,
+	[70] = 3594, [71] = 3877,
+	[75] = 4046, [76] = 4079,
+	[80] = 6200,
 }, {__index = function(self, x) return a*x^4 + b*x^3 + c*x^2 + d*x + e end})
 
--- Get the estimated kill honor for your current level
-function lib.GetKillHonor(lvl)
-	return killHonor[lvl or UnitLevel("player")]
+-- Get the estimated bg xp tick for your current level
+function lib.GetExperienceTick(lvl)
+	return xpTicks[lvl or UnitLevel("player")]
 end
 
 -- Get the maximum and minimum experience for one complete battleground round
-function lib.GetMinMaxBattlegroundHonor(id, lvl, ignoreHoliday)
+function lib.GetMinMaxBattlegroundExperience(id, lvl, ignoreHoliday)
 	local info = data[id]
 	if(not info) then return end
 
-	local honor = lib.GetKillHonor(lvl)
+	local honor = lib.GetExperienceTick(lvl)
 	local min, max
 	if(not ignoreHoliday and select(3, GetBattlegroundInfo(id))) then
-		min, max = info.minBonusHoliday, info.maxBonusHoliday
+		min, max = info.minTicksHoliday, info.maxTicksHoliday
 	else
-		min, max = info.minBonus, info.maxBonus
+		min, max = info.minTicks, info.maxTicks
 	end
 
 	return min and min*honor, max and max*honor
 end
 
--- Get the average honor gained in one battleground based on win/loss ratio
-function lib.GetAverageBattlegroundHonor(id, lvl, ignoreHoliday, assumeEqual)
-	local min, max = lib.GetMinMaxBattlegroundHonor(id, lvl, ignoreHoliday)
+-- Get the average experience gained in one battleground based on win/loss ratio
+function lib.GetAverageBattlegroundExperience(id, lvl, ignoreHoliday, assumeEqual)
+	local min, max = lib.GetMinMaxBattlegroundExperience(id, lvl, ignoreHoliday)
 	if(not min or not max) then return end
 	if(assumeEqual) then return (min+max)/2 end
 
@@ -200,5 +206,22 @@ function lib.GetAverageBattlegroundHonor(id, lvl, ignoreHoliday, assumeEqual)
 	return win/total*max+(1-win/total)*min
 end
 
--- use this to transform bonus honor into experience
-lib.XP_FACTOR = 100
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:SetScript("OnEvent", function()
+	local XP_GAIN, HONOR_GAIN = COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED:gsub("%%d", "(%%d+)"), COMBATLOG_HONORAWARD:gsub("%%d", "(%%d+)")
+	local _addMessage = ChatFrame3.AddMessage
+	local foundHonor
+	ChatFrame3.AddMessage = function(self, msg, ...)
+		if(foundHonor) then
+			local xp = msg:match(XP_GAIN)
+			if(xp) then
+				local text = ("%d xp per %d honor at %d"):format(xp, foundHonor, UnitLevel("player"))
+				_ = debug and debug(text)
+				print(text)
+			end
+		end
+		foundHonor = msg:match(HONOR_GAIN)
+		return _addMessage(self, msg, ...)
+	end
+end)

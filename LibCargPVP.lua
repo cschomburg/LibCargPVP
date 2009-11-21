@@ -238,7 +238,8 @@ frame:SetScript("OnEvent", function()
 		if(foundHonor) then
 			local xp = msg:match(XP_GAIN)
 			if(xp) then
-				debug(xp, ("xp per %d honor at %d"):format(foundHonor, UnitLevel("player")))
+				local factor = lib.GetExperienceFactor()
+				debug(xp, ("xp per %d honor at %d with factor %.1f"):format(foundHonor/factor(), UnitLevel("player"), factor))
 			end
 		end
 		foundHonor = msg:match(HONOR_GAIN)

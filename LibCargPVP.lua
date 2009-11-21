@@ -1,4 +1,4 @@
-local lib = LibStub:NewLibrary("LibCargPVP", 5)
+local lib = LibStub:NewLibrary("LibCargPVP", 6)
 if(not lib) then return end
 
 -- Index following GetNumBattlegroundTypes()
@@ -94,7 +94,7 @@ local dailies = {
 }
 
 --holiday order of the battlegroundIDs
-local holidays = {1, 2, 5, 6, 3, 4}
+local holidays = {3, 4, 1, 2, 5, 6}
 
 -- Returns percent, win total info by battleground id
 function lib.GetBattlegroundWinTotal(id)
@@ -124,7 +124,7 @@ function lib.GetBattlegroundHoliday()
 	local now = date("*t")
 	local week = floor(now.yday/7)+1
 	if(now.wday == 3) then week = week +1 end
-	week = (week + 2) % max
+	week = (week) % max
 	week = week > 0 and week or max
 	return holidays[week], now.wday > 5 or now.wday < 3
 end
@@ -166,17 +166,34 @@ local xpTicks = setmetatable({
 	[21] = 310,
 	[23] = 349, [24] = 368, [25] = 376, [26] = 396, [27] = 415, [28] = 435, [29] = 442,
 	[30] = 698, [31] = 492, [32] = 518,
-	[34] = 598, [35] = 632, [36] = 673, [37] = 707, [38] = 808,
+	[34] = 598, [35] = 632, [36] = 673, [37] = 707, [38] = 735,
 	[40] = 1235, [41] = 868, [42] = 934, [43] = 967, [44] = 1001, [45] = 1067, [46] = 1101, [47] = 1167, [48] = 1201, [49] = 1235,
-	[55] = 1547,
+	[50] = 1945, [51] = 1347, [52] = 1415, [53] = 1450, [54] = 1515, [55] = 1584, [56] = 1618, [57] = 1685, [58] = 1753, [59] = 1787,
+--	[55] = 1547,
+	[60] = 2742, [51] = 2372,
 	[70] = 3594, [71] = 3877, [72] = 3909,
-	[75] = 4046, [76] = 4079,
+	[74] = 4310, [75] = 4046, [76] = 4079,
 	[80] = 6200,
 }, {__index = function(self, x) return a*x^4 + b*x^3 + c*x^2 + d*x + e end})
 
 -- Get the estimated bg xp tick for your current level
 function lib.GetExperienceTick(lvl)
 	return xpTicks[lvl or UnitLevel("player")]
+end
+
+local itemIDs = {
+	[44103] = 0.1,
+}
+function lib.GetExperienceFactor()
+	local factor = 1
+	for i=0, 19 do
+		local link = GetInventoryItemLink("player", i)
+		if(link) then
+			local id = tonumber(link:match("item:(%d+)"))
+			factor = factor + (itemIDs[id] or 0)
+		end
+	end
+	return factor
 end
 
 -- Get the maximum and minimum experience for one complete battleground round
@@ -192,7 +209,10 @@ function lib.GetMinMaxBattlegroundExperience(id, lvl, ignoreHoliday)
 		min, max = info.minTicks, info.maxTicks
 	end
 
-	return min and min*honor, max and max*honor
+	if(not min or not max) then return end
+	local factor = lib.GetExperienceFactor()
+
+	return min*honor*factor, max*honor*factor
 end
 
 -- Get the average experience gained in one battleground based on win/loss ratio
@@ -209,6 +229,8 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:SetScript("OnEvent", function()
+	if(not debug) then return end
+
 	local XP_GAIN, HONOR_GAIN = COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED:gsub("%%d", "(%%d+)"), COMBATLOG_HONORAWARD:gsub("%%d", "(%%d+)")
 	local _addMessage = ChatFrame3.AddMessage
 	local foundHonor
@@ -216,9 +238,7 @@ frame:SetScript("OnEvent", function()
 		if(foundHonor) then
 			local xp = msg:match(XP_GAIN)
 			if(xp) then
-				local text = ("%d xp per %d honor at %d"):format(xp, foundHonor, UnitLevel("player"))
-				_ = debug and debug(text)
-				print(text)
+				debug(xp, ("xp per %d honor at %d"):format(foundHonor, UnitLevel("player")))
 			end
 		end
 		foundHonor = msg:match(HONOR_GAIN)
